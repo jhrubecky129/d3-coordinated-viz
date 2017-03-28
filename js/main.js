@@ -15,10 +15,10 @@ function setMap(){
     
     //create albers = area conic proj centerd on western US
     var projection = d3.geoAlbers()
-        .center([-110.471, 41.432])
-        .rotate([-2, 0, 0])
-        .parallels([36.5, 45])
-        .scale(2500)
+        .center([-10.91, 39.96])
+        .rotate([99.18, 2.73, 0])
+        .parallels([29.5, 47.14])
+        .scale(1000)
         .translate([width / 2, height / 2]);
     
     //create path generator
@@ -37,9 +37,27 @@ function setMap(){
 		console.log(csvData);
 		console.log(states);
 		console.log(western);
+        
+        //graticule generator
+        var graticule = d3.geoGraticule()
+            .step([5, 5]); //place graticule lines every 5 degrees of longitude and latitude
+        
+        //grat background
+        var gratBackground = map.append("path")
+            .datum(graticule.outline())
+            .attr("class", "gratBackground")
+            .attr("d", path)
+        
+        //grat lines
+        var gratLines = map.selectAll(".gratLines")
+            .data(graticule.lines())
+            .enter()
+            .append("path")
+            .attr("class", "gratLines")
+            .attr("d", path);
 		
 		//translate topojson
-		var backgroundStates = topojson.feature(states, states.objects.background_states), westernStates = topojson.feature(western, western.objects.western_states).features;
+		var backgroundStates = topojson.feature(states, states.objects.ne_50m_admin_1_states_provinces_lakes), westernStates = topojson.feature(western, western.objects.ne_50m_admin_1_states_provinces_lakes).features;
         
         //examine results
         console.log(backgroundStates);
