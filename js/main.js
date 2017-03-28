@@ -15,7 +15,7 @@ function setMap(){
     
     //create albers = area conic proj centerd on western US
     var projection = d3.geoAlbers()
-        .center([-10.91, 39.96])
+        .center([-10.91, 40.5])
         .rotate([99.18, 2.73, 0])
         .parallels([29.5, 47.14])
         .scale(1000)
