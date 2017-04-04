@@ -5,9 +5,22 @@
     
 //variables for data join
 var attrArray = ["2015 Unintentional", "2015 Non-Injury", "2015 Suicide", "2015 Homicide", "2015 Undetermined"];
-
 //initial attr
-var expressed = attrArray[0];    
+var expressed = attrArray[0];
+//chart frame dimensions
+var chartWidth = window.innerWidth * 0.425,
+    chartHeight = 460,
+    leftPadding = 25,
+    rightPadding = 2,
+    topBottomPadding = 5,
+    chartInnerWidth = chartWidth - leftPadding - rightPadding,
+    chartInnerHeight = chartHeight - topBottomPadding * 2,
+    translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+
+//create a scale to size bars proportionally to frame and for axis
+var yScale = d3.scaleLinear()
+    .range([0, chartHeight])
+    .domain([0, 105]);
 
 //set up chloropleth map
 function setMap(){
@@ -24,10 +37,10 @@ function setMap(){
     
     //create albers = area conic proj centerd on western US
     var projection = d3.geoAlbers()
-        .center([-10.91, 40.5])
+        .center([-7, 41.5])
         .rotate([99.18, 2.73, 0])
         .parallels([29.5, 47.14])
-        .scale(1000)
+        .scale(950)
         .translate([width / 2, height / 2]);
     
     //create path generator
@@ -81,25 +94,131 @@ function setMap(){
         
         //add coordinated visualization to map
         setChart(csvData, colorScale);
+        
+        createDropdown(csvData);
 	};	
 };//end of setMap
+
+//create dropdown menu for attribute selection
+function createDropdown(csvData){
+    //add select element
+    var dropdown = d3.select("body")
+        .append("select")
+        .attr("class", "dropdown")
+        .on("change", function(){
+            changeAttribute(this.value, csvData)
+        });
+    
+    //add initial option
+    var titleOption = dropdown.append("option")
+        .attr("class", "titleOption")
+        .attr("disabled", "true")
+        .text("Select Attribute");
+    
+    //add attr name options
+    var attrOptions = dropdown.selectAll("attrOptions")
+        .data(attrArray)
+        .enter()
+        .append("option")
+        .attr("value", function(d){ return d })
+        .text(function(d){ return d });
+};
+    
+//change listener handler
+function changeAttribute(attribute, csvData){
+    //change expressed attr
+    expressed = attribute;
+    
+    //recreate color scale
+    var colorScale = makeColorScale(csvData);
+    
+    //recolor enumeration units
+    var regions = d3.selectAll(".regions")
+        .style("fill", function(d){
+            return chloropleth(d.properties, colorScale)
+        });
+    
+    //resort, resize, recolor bars
+    var bars = d3.selectAll(".bar")
+        //resort
+        .sort(function(a,b){
+            return b[expressed] - a[expressed];
+        });
+    /*
+        .attr("x", function(d,i){
+            return i * (chartInnerWidth/csvData.length)+leftPadding;
+        })
+        //resize
+        .attr("height", function(d, i){
+            return 463 - yScale(parseFloat(d[expressed]));
+        })
+        .attr("y", function(d,i){
+            return yScale(parseFloat(d[expressed])) + topBottomPadding;
+        })
+        //recolor
+        .style("fill", function(d){
+            return chloropleth(d, colorScale);
+        });
+        */
+};
+
+//position size and color barsin chart
+function updateChart(bars, n, colorScale, csvData, numbers, chart){
+    //position bars
+    bars.attr("x", function(d,i){
+        console.log(i * (chartWidth/csvData.length));
+            return i * (chartWidth/csvData.length);
+        })
+        //resize
+        .attr("height", function(d, i){
+            return 460 - yScale(parseFloat(d[expressed]));
+        })
+        .attr("y", function(d,i){
+            return yScale(parseFloat(d[expressed]));
+        })
+        //recolor
+        .style("fill", function(d){
+            return chloropleth(d, colorScale);
+        });
+    
+    //annotate bars with attribute value text
+    numbers.sort(function(a, b){
+              return a[expressed]-b[expressed];
+        })
+        .attr("class", function(d){
+            return "numbers " + d.State;
+        })
+        .attr("text-anchor", "left")
+        .attr("x", function(d, i){
+            var fraction = chartWidth / csvData.length;
+        console.log(i*fraction);
+            return i * fraction;
+        })
+        .attr("y", function(d){
+            return 460 - yScale(parseFloat(d[expressed]));
+        })
+        .text(function(d){
+            return d[expressed];
+        });
+    
+    //create dynamic title
+    var chartTitle = chart.append("text")
+        .attr("x", 20)
+        .attr("y", 40)
+        .attr("class", "chartTitle")
+        .text("Number of " + expressed + " deaths in each state");
+}
     
 function setChart(csvData, colorScale){
-    //chart frame dimensions
-    var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 460;
     
-    //create scale to size bars proportionally to frame
-    var yScale = d3.scaleLinear()
-        .range([0, chartHeight])
-        .domain([0, 105]);
-    
-    //create a second svg element to hold the bar chart
+    //create an svg element to hold the bar chart
     var chart  = d3.select("body")
         .append("svg")
         .attr("width", chartWidth)
         .attr("height", chartHeight)
         .attr("class", "chart");
+    
+    console.log(csvData.length);
     
     //set bars for each province
     var bars = chart.selectAll(".bars")
@@ -107,12 +226,13 @@ function setChart(csvData, colorScale){
         .enter()
         .append("rect")
         .sort(function(a, b){
-            return a[expressed]-b[expressed];
+            return b[expressed]-a[expressed];
         })
         .attr("class", function(d){
-            return "bars " + d.State; //or name, not sure yet
+            return "bar " + d.State; //or name, not sure yet
         })
-        .attr("width", chartWidth / csvData.length - 1)
+        .attr("width", chartWidth / csvData.length - 1);
+        /*
         .attr("x", function(d, i){
             return i * (chartWidth / csvData.length);
         })
@@ -125,6 +245,7 @@ function setChart(csvData, colorScale){
         .style("fill", function(d){
             return chloropleth(d, colorScale);
         });
+        */
     
     //annotate bars with attribute value text
     var numbers = chart.selectAll(".numbers")
@@ -139,28 +260,23 @@ function setChart(csvData, colorScale){
         })
         .attr("text-anchor", "middle")
         .attr("x", function(d, i){
-            var fraction = chartWidth / csvData.length;
-            return i * fraction + (fraction - 1) / 2;
+            var fraction = chartInnerWidth / csvData.length;
+            return i * fraction;
         })
         .attr("y", function(d){
-            return chartHeight - yScale(parseFloat(d[expressed])) + 15;
+            return chartInnerHeight - yScale(parseFloat(d[expressed]))+ 15;
         })
         .text(function(d){
             return d[expressed];
         });
     
-    //create dynamic title
-    var chartTitle = chart.append("text")
-        .attr("x", 20)
-        .attr("y", 40)
-        .attr("class", "chartTitle")
-        .text("Number of " + expressed + " deaths in each state");
-
     var scale = chart.append("text")
         .attr("x", 20)
         .attr("y", 80)
         .attr("class", "chartTitle")
         .text("per 100,000 People");
+    
+    updateChart(bars, csvData.length, colorScale, csvData, numbers, chart);
 
 };    
     
