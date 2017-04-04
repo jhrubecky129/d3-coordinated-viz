@@ -107,7 +107,7 @@ function setChart(csvData, colorScale){
         .enter()
         .append("rect")
         .sort(function(a, b){
-            return a[expressed]-b[expressed]
+            return a[expressed]-b[expressed];
         })
         .attr("class", function(d){
             return "bars " + d.State; //or name, not sure yet
@@ -125,6 +125,43 @@ function setChart(csvData, colorScale){
         .style("fill", function(d){
             return chloropleth(d, colorScale);
         });
+    
+    //annotate bars with attribute value text
+    var numbers = chart.selectAll(".numbers")
+        .data(csvData)
+        .enter()
+        .append("text")
+        .sort(function(a, b){
+              return a[expressed]-b[expressed];
+        })
+        .attr("class", function(d){
+            return "numbers " + d.State;
+        })
+        .attr("text-anchor", "middle")
+        .attr("x", function(d, i){
+            var fraction = chartWidth / csvData.length;
+            return i * fraction + (fraction - 1) / 2;
+        })
+        .attr("y", function(d){
+            return chartHeight - yScale(parseFloat(d[expressed])) + 15;
+        })
+        .text(function(d){
+            return d[expressed];
+        });
+    
+    //create dynamic title
+    var chartTitle = chart.append("text")
+        .attr("x", 20)
+        .attr("y", 40)
+        .attr("class", "chartTitle")
+        .text("Number of " + expressed + " deaths in each state");
+
+    var scale = chart.append("text")
+        .attr("x", 20)
+        .attr("y", 80)
+        .attr("class", "chartTitle")
+        .text("per 100,000 People");
+
 };    
     
 function chloropleth(props, colorScale){
@@ -140,10 +177,10 @@ function chloropleth(props, colorScale){
     
 function makeColorScale(data){
     var colorClasses = [
-        "#D4B9DA",
-        "#C994C7",
-        "#DD1C77",
-        "#980043"
+        "#fef0d9",
+        "#fdcc8a",
+        "#fc8d59",
+        "#d7301f"
     ];
     
     //color scale generator

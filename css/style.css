@@ -4,9 +4,9 @@ body{
 }
 
 .unitedStates {
-    fill: #FFF;
+    fill: #252525;
     stroke: #CCC;
-    stroke-width: 2px;
+    stroke-width: .5px;
 }
 
 .gratLines {
@@ -21,14 +21,27 @@ body{
 
 .map {
     border: medium solid #999;
-    background-color: #D5E3FF;
+    background-color: #253494;
 }
 
 .chart {
-    background-color: rgba(128,128,128,.2);
+    background-color: #252525;
     border: medium solid #999;
     float: right;
     margin: 0px 20px 0 0;
+}
+
+.numbers {
+    fill: black;
+    font-family: sans-serif;
+    font-size: .9em;
+}
+
+.chartTitle {
+    font-family: sans-serif;
+    font-size: 1.25em;
+    font-weight: bold;
+    fill: white;
 }
 
 .regions {
