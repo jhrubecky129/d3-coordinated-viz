@@ -140,32 +140,16 @@ function changeAttribute(attribute, csvData){
         })
         .duration(500);
 
-    /*
-        .attr("x", function(d,i){
-            return i * (chartInnerWidth/csvData.length)+leftPadding;
-        })
-        //resize
-        .attr("height", function(d, i){
-            return 463 - yScale(parseFloat(d[expressed]));
-        })
-        .attr("y", function(d,i){
-            return yScale(parseFloat(d[expressed])) + topBottomPadding;
-        })
-        //recolor
-        .style("fill", function(d){
-            return chloropleth(d, colorScale);
-        });
-    */
     var numbers = d3.selectAll(".numbers")
         .sort(function(a,b){
             return a[expressed] - b[expressed];
         });
     
     var chartTitle = d3.selectAll(".chartTitle")
-        .attr("x", 20)
-        .attr("y", 40)
+        .attr("x", 10)
+        .attr("y", 30)
         .attr("class", "chartTitle")
-        .text("Deaths Caused By " + expressed);
+        .text("Deaths Caused By " + expressed + " in 2015");
         
     updateChart(bars, csvData.length, colorScale, numbers, chartTitle);
 };
@@ -244,20 +228,6 @@ function setChart(csvData, colorScale){
     //add style descriptor to each rect
     var desc = bars.append("desc")
         .text('{"stroke": "none", "stroke-width": "0px"}');
-        /*
-        .attr("x", function(d, i){
-            return i * (chartWidth / csvData.length);
-        })
-        .attr("height", function(d){
-            return yScale(parseFloat(d[expressed]));
-        })
-        .attr("y", function(d){
-            return chartHeight - yScale(parseFloat(d[expressed]));
-        })
-        .style("fill", function(d){
-            return chloropleth(d, colorScale);
-        });
-        */
     
     //annotate bars with attribute value text
     var numbers = chart.selectAll(".numbers")
@@ -275,15 +245,18 @@ function setChart(csvData, colorScale){
             return d[expressed];
         });
     
+    var desc = numbers.append("desc")
+        .text('{"fill":"black, "font-family":"sans-serif", "font-size":".8em", "stroke":"none", "stroke-width":"0px"}');
+    
     var chartTitle = chart.append("text")
-        .attr("x", 20)
-        .attr("y", 40)
+        .attr("x", 10)
+        .attr("y", 30)
         .attr("class", "chartTitle")
-        .text("Deaths Caused By " + expressed);
+        .text("Deaths Caused By " + expressed + " in 2015");
     
     var scale = chart.append("text")
-        .attr("x", 20)
-        .attr("y", 80)
+        .attr("x", 10)
+        .attr("y", 70)
         .attr("class", "scale")
         .text("per 100,000 People");
     
@@ -449,9 +422,11 @@ function moveLabel(){
 //function to highlight enumeration units and bars
 function highlight(props){
     //change stroke
-    var selected = d3.selectAll("."+props.name)
-        .style("stroke", "blue")
-        .style("stroke-width", "2");
+    console.log(props.name);
+    var selected = d3.selectAll("." + props.name)
+        .style("stroke", "#8dd3c7")
+        .style("stroke-width", "3");
+    setLabel(props);
 };
     
 //function to reset the element style on mouseout
@@ -493,6 +468,7 @@ function setEnumerationUnits(westernStates, map, path, colorScale){
             return chloropleth(d.properties, colorScale);
         })
         .on("mouseover", function(d){
+            console.log(d.properties);
             highlight(d.properties);
         })
         .on("mouseout", function(d){
