@@ -4,11 +4,13 @@
 (function(){
     
 //variables for data join
-var attrArray = ["2015 Unintentional", "2015 Non-Injury", "2015 Suicide", "2015 Homicide", "2015 Undetermined"];
+var attrArray = [
+    "Malignant Neoplasms", "Diseases of the Heart", "Cerebrovascular Diseases", "Chronic Lower Respiratory Diseases", "Accidents"
+];
 //initial attr
 var expressed = attrArray[0];
 //chart frame dimensions
-var chartWidth = window.innerWidth * 0.425,
+var chartWidth = window.innerWidth * 0.45,
     chartHeight = 460,
     leftPadding = 25,
     rightPadding = 2,
@@ -19,8 +21,8 @@ var chartWidth = window.innerWidth * 0.425,
 
 //create a scale to size bars proportionally to frame and for axis
 var yScale = d3.scaleLinear()
-    .range([0, chartHeight])
-    .domain([0, 105]);
+    .range([460, 0])
+    .domain([-50, 265]);
 
 //set up chloropleth map
 function setMap(){
@@ -49,29 +51,19 @@ function setMap(){
     
 	//use d3 queue to parallelize asynchronous data loading
 	d3.queue()
-		.defer(d3.csv, "data/injury_related_mortality_per_100000.csv")//load attributes from csv
+		.defer(d3.csv, "data/2015_COD.csv")//load attributes from csv
 		.defer(d3.json, "data/background_states.topojson")//load background states
 		.defer(d3.json, "data/western_states.topojson")//load chloropleth states
 		.await(callback);
 		
 	function callback(error, csvData, states, western){
-		console.log(error);
-		console.log(csvData);
-		console.log(states);
-		console.log(western);
         
         //place graticule
-        setGraticule(map, path);
+        //setGraticule(map, path);
 		
 		//translate topojsons
 		var backgroundStates = topojson.feature(states, states.objects.ne_50m_admin_1_states_provinces_lakes), 
             westernStates = topojson.feature(western, western.objects.ne_50m_admin_1_states_provinces_lakes).features;
-        
-        //variables for data join
-        var attrArray = ["2015 Unintentional", "2015 Non-Injury", "2015 Suicide", "2015 Homicide", "2015 Undetermined"];
-        
-        //initial attr
-        var expressed = attrArray[0];
         
         //add backgroundStates to map
         var unitedStates = map.append("path")
@@ -81,10 +73,6 @@ function setMap(){
         
         //join csv data to geojson enum units
         westernStates = joinData(westernStates, csvData);
-        
-        //examine results
-        console.log(backgroundStates);
-        console.log(westernStates);
         
         //create color scale
         var colorScale = makeColorScale(csvData);
@@ -134,6 +122,8 @@ function changeAttribute(attribute, csvData){
     
     //recolor enumeration units
     var regions = d3.selectAll(".regions")
+        .transition()
+        .duration(1000)
         .style("fill", function(d){
             return chloropleth(d.properties, colorScale)
         });
@@ -142,8 +132,14 @@ function changeAttribute(attribute, csvData){
     var bars = d3.selectAll(".bar")
         //resort
         .sort(function(a,b){
-            return b[expressed] - a[expressed];
-        });
+            return a[expressed] - b[expressed];
+        })
+        .transition() //add animation
+        .delay(function(d, i){
+            return i * 20
+        })
+        .duration(500);
+
     /*
         .attr("x", function(d,i){
             return i * (chartInnerWidth/csvData.length)+leftPadding;
@@ -159,19 +155,31 @@ function changeAttribute(attribute, csvData){
         .style("fill", function(d){
             return chloropleth(d, colorScale);
         });
-        */
+    */
+    var numbers = d3.selectAll(".numbers")
+        .sort(function(a,b){
+            return a[expressed] - b[expressed];
+        });
+    
+    var chartTitle = d3.selectAll(".chartTitle")
+        .attr("x", 20)
+        .attr("y", 40)
+        .attr("class", "chartTitle")
+        .text("Deaths Caused By " + expressed);
+        
+    updateChart(bars, csvData.length, colorScale, numbers, chartTitle);
 };
 
 //position size and color barsin chart
-function updateChart(bars, n, colorScale, csvData, numbers, chart){
+function updateChart(bars, n, colorScale, numbers, chartTitle){
     //position bars
-    bars.attr("x", function(d,i){
-        console.log(i * (chartWidth/csvData.length));
-            return i * (chartWidth/csvData.length);
+    bars
+        .attr("x", function(d,i){
+            return i * (chartWidth/n);
         })
-        //resize
+        //n
         .attr("height", function(d, i){
-            return 460 - yScale(parseFloat(d[expressed]));
+            return chartHeight-yScale(parseFloat(d[expressed]));
         })
         .attr("y", function(d,i){
             return yScale(parseFloat(d[expressed]));
@@ -182,31 +190,28 @@ function updateChart(bars, n, colorScale, csvData, numbers, chart){
         });
     
     //annotate bars with attribute value text
-    numbers.sort(function(a, b){
-              return a[expressed]-b[expressed];
-        })
+    numbers
         .attr("class", function(d){
-            return "numbers " + d.State;
+            return "numbers " + d.name;
         })
-        .attr("text-anchor", "left")
+        .attr("text-anchor", "middle")
         .attr("x", function(d, i){
-            var fraction = chartWidth / csvData.length;
-        console.log(i*fraction);
-            return i * fraction;
+            var fraction = chartWidth / n;
+            return i * fraction + (chartWidth/n)/2;
         })
         .attr("y", function(d){
-            return 460 - yScale(parseFloat(d[expressed]));
+            return yScale(parseFloat(d[expressed])) + 15;
         })
         .text(function(d){
             return d[expressed];
         });
     
     //create dynamic title
-    var chartTitle = chart.append("text")
+    /*chartTitle
         .attr("x", 20)
         .attr("y", 40)
         .attr("class", "chartTitle")
-        .text("Number of " + expressed + " deaths in each state");
+        .text("Number of " + expressed + " deaths in each state");*/
 }
     
 function setChart(csvData, colorScale){
@@ -217,21 +222,28 @@ function setChart(csvData, colorScale){
         .attr("width", chartWidth)
         .attr("height", chartHeight)
         .attr("class", "chart");
-    
-    console.log(csvData.length);
-    
+        
     //set bars for each province
     var bars = chart.selectAll(".bars")
         .data(csvData)
         .enter()
         .append("rect")
         .sort(function(a, b){
-            return b[expressed]-a[expressed];
+            return a[expressed]-b[expressed];
         })
         .attr("class", function(d){
-            return "bar " + d.State; //or name, not sure yet
+            console.log(d.State)
+            return "bar " + d.State; //orname, not sure yet
         })
-        .attr("width", chartWidth / csvData.length - 1);
+        .attr("width", chartWidth / csvData.length - 1)
+        .on("mouseover", highlight)
+        .on("mouseout", dehighlight)
+        .on("mousemove", moveLabel);
+    
+    
+    //add style descriptor to each rect
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
         /*
         .attr("x", function(d, i){
             return i * (chartWidth / csvData.length);
@@ -259,25 +271,23 @@ function setChart(csvData, colorScale){
             return "numbers " + d.State;
         })
         .attr("text-anchor", "middle")
-        .attr("x", function(d, i){
-            var fraction = chartInnerWidth / csvData.length;
-            return i * fraction;
-        })
-        .attr("y", function(d){
-            return chartInnerHeight - yScale(parseFloat(d[expressed]))+ 15;
-        })
         .text(function(d){
             return d[expressed];
         });
     
+    var chartTitle = chart.append("text")
+        .attr("x", 20)
+        .attr("y", 40)
+        .attr("class", "chartTitle")
+        .text("Deaths Caused By " + expressed);
+    
     var scale = chart.append("text")
         .attr("x", 20)
         .attr("y", 80)
-        .attr("class", "chartTitle")
+        .attr("class", "scale")
         .text("per 100,000 People");
     
-    updateChart(bars, csvData.length, colorScale, csvData, numbers, chart);
-
+    updateChart(bars, csvData.length, colorScale, numbers, chartTitle);
 };    
     
 function chloropleth(props, colorScale){
@@ -393,6 +403,81 @@ function joinData(westernStates, csvData){
     
     return westernStates;
 };
+    
+//function to create dynamic label
+function setLabel(props){
+    //label content
+    var labelAttribute = "<h1>" + props[expressed] +
+        "</h1><b>" + expressed + "</b>";
+
+    //create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.name + "_label")
+        .html(labelAttribute);
+
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(props.name);
+};
+    
+//function to move info label with mouse
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = d3.event.clientX + 10,
+        y1 = d3.event.clientY - 75,
+        x2 = d3.event.clientX - labelWidth - 10,
+        y2 = d3.event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = d3.event.clientY < 75 ? y2 : y1;
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
+};    
+    
+//function to highlight enumeration units and bars
+function highlight(props){
+    //change stroke
+    var selected = d3.selectAll("."+props.name)
+        .style("stroke", "blue")
+        .style("stroke-width", "2");
+};
+    
+//function to reset the element style on mouseout
+function dehighlight(props){
+    var selected = d3.selectAll("." + props.name)
+        .style("stroke", function(){
+            return getStyle(this, "stroke")
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width")
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+        
+    //remove info label
+    d3.select(".infolabel")
+        .remove();
+
+        return styleObject[styleName];
+    };
+};    
 
 function setEnumerationUnits(westernStates, map, path, colorScale){
     //add westernStates to map
@@ -401,12 +486,23 @@ function setEnumerationUnits(westernStates, map, path, colorScale){
         .enter()
         .append("path")
         .attr("class", function(d){
-            return "regions " + d.properties.State;
+            return "regions " + d.properties.name;
         })
         .attr("d", path)
         .style("fill", function(d){
             return chloropleth(d.properties, colorScale);
-        });
+        })
+        .on("mouseover", function(d){
+            highlight(d.properties);
+        })
+        .on("mouseout", function(d){
+            dehighlight(d.properties);
+        })
+        .on("mousemove", moveLabel);
+    //add style descriptor to each path
+    var desc = westernUS.append("desc")
+        .text('{"stroke": "#000", "stroke-width": "0.5px"}');
+
 };    
 
 window.onload = setMap();

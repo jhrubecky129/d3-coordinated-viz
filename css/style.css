@@ -4,7 +4,7 @@ body{
 }
 
 .unitedStates {
-    fill: #252525;
+    fill:#CCC;
     stroke: #CCC;
     stroke-width: .5px;
 }
@@ -21,23 +21,30 @@ body{
 
 .map {
     border: medium solid #999;
-    background-color:#257099;
+    background-color:#252525;/*#257099;*/
 }
 
 .chart {
     background-color: #252525;
     border: medium solid #999;
     float: right;
-    margin: 0px 20px 0 0;
+    /*margin: 0px 10px 0 0;*/
 }
 
 .numbers {
     fill: black;
     font-family: sans-serif;
-    font-size: .9em;
+    font-size: .8em;
 }
 
 .chartTitle {
+    font-family: sans-serif;
+    font-size: 1.25em;
+    font-weight: bold;
+    fill: white;
+}
+
+.scale {
     font-family: sans-serif;
     font-size: 1.25em;
     font-weight: bold;
@@ -65,6 +72,23 @@ body{
 
 option {
     font-weight: normal;
+}
+
+.infolabel {
+    position: absolute;
+    height: 50px;
+    min-width: 100px;
+    color: #fff;
+    background-color: #000;
+    border: solid thin #fff;
+    padding: 5px 10px;
+}
+
+.infolabel h1 {
+    margin: 0 20px 0 0;
+    padding: 0;
+    display: inline-block;
+    line-height: 1em;
 }
 
 #mydiv{
